@@ -62,15 +62,10 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
         return mExecuteCallback;
     }
 
-    final void setExecuteCallback(ExecuteCallback<T> callback)
-    {
-        mExecuteCallback = callback;
-    }
-
     @Override
     public void execute(ExecuteCallback<T> callback)
     {
-        setExecuteCallback(callback);
+        mExecuteCallback = callback;
         executeImpl(callback);
     }
 
