@@ -4,6 +4,7 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
 {
     private State mState = State.None;
     private OnStateChangeCallback mOnStateChangeCallback;
+    private ExecuteCallback<T> mExecuteCallback;
 
     @Override
     public final State getState()
@@ -41,9 +42,30 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
     {
     }
 
+    protected ExecuteCallback<T> getExecuteCallback()
+    {
+        if (mExecuteCallback == null)
+        {
+            mExecuteCallback = new ExecuteCallback<T>()
+            {
+                @Override
+                public void onSuccess(T data)
+                {
+                }
+
+                @Override
+                public void onError(int code, String desc)
+                {
+                }
+            };
+        }
+        return mExecuteCallback;
+    }
+
     @Override
     public void execute(ExecuteCallback<T> callback)
     {
+        mExecuteCallback = callback;
         executeImpl(callback);
     }
 
