@@ -8,10 +8,13 @@ package com.sd.lib.reqdata;
 public abstract class SeqRequestDataTask<T> extends BaseRequestDataTask<T>
 {
     @Override
-    public void execute(ExecuteCallback<T> callback)
+    public final void execute(ExecuteCallback<T> callback)
     {
         if (getState() == State.Executing)
+        {
+            setExecuteCallback(callback);
             return;
+        }
 
         super.execute(callback);
     }

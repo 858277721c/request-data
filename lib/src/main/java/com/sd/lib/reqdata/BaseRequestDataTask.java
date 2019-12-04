@@ -42,7 +42,7 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
     {
     }
 
-    protected ExecuteCallback<T> getExecuteCallback()
+    protected final ExecuteCallback<T> getExecuteCallback()
     {
         if (mExecuteCallback == null)
         {
@@ -62,12 +62,26 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
         return mExecuteCallback;
     }
 
+    final void setExecuteCallback(ExecuteCallback<T> callback)
+    {
+        mExecuteCallback = callback;
+    }
+
     @Override
     public void execute(ExecuteCallback<T> callback)
     {
-        mExecuteCallback = callback;
+        setExecuteCallback(callback);
         executeImpl(callback);
     }
 
+    @Override
+    public final void cancel()
+    {
+        mExecuteCallback = null;
+        cancelImpl();
+    }
+
     protected abstract void executeImpl(ExecuteCallback<T> callback);
+
+    protected abstract void cancelImpl();
 }
