@@ -4,7 +4,8 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
 {
     private State mState = State.None;
     private OnStateChangeCallback mOnStateChangeCallback;
-    private ExecuteCallback<T> mExecuteCallback;
+
+    private ExecuteCallback<T> mRealExecuteCallback;
 
     @Override
     public final State getState()
@@ -44,39 +45,43 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
 
     protected final ExecuteCallback<T> getExecuteCallback()
     {
-        if (mExecuteCallback == null)
-        {
-            mExecuteCallback = new ExecuteCallback<T>()
-            {
-                @Override
-                public void onSuccess(T data)
-                {
-                }
-
-                @Override
-                public void onError(int code, String desc)
-                {
-                }
-            };
-        }
-        return mExecuteCallback;
+        return mInternalExecuteCallback;
     }
+
+    private final ExecuteCallback<T> mInternalExecuteCallback = new ExecuteCallback<T>()
+    {
+        @Override
+        public void onSuccess(T data)
+        {
+            setState(State.Success);
+            if (mRealExecuteCallback != null)
+                mRealExecuteCallback.onSuccess(data);
+        }
+
+        @Override
+        public void onError(int code, String desc)
+        {
+            setState(State.Error);
+            if (mRealExecuteCallback != null)
+                mRealExecuteCallback.onError(code, desc);
+        }
+    };
 
     @Override
     public void execute(ExecuteCallback<T> callback)
     {
-        mExecuteCallback = callback;
-        executeImpl(callback);
+        mRealExecuteCallback = callback;
+        executeImpl();
     }
 
     @Override
     public final void cancel()
     {
-        mExecuteCallback = null;
+        mRealExecuteCallback = null;
         cancelImpl();
     }
 
-    protected abstract void executeImpl(ExecuteCallback<T> callback);
+    protected abstract void executeImpl();
 
     protected abstract void cancelImpl();
 }
