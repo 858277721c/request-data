@@ -2,9 +2,8 @@ package com.sd.lib.reqdata;
 
 public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
 {
-    private State mState = State.None;
+    private volatile State mState = State.None;
     private OnStateChangeCallback mOnStateChangeCallback;
-
     private ExecuteCallback<T> mRealExecuteCallback;
 
     @Override
@@ -14,7 +13,7 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
     }
 
     @Override
-    public final void setOnStateChangeCallback(OnStateChangeCallback callback)
+    public synchronized final void setOnStateChangeCallback(OnStateChangeCallback callback)
     {
         mOnStateChangeCallback = callback;
     }
@@ -24,7 +23,7 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
      *
      * @param state
      */
-    protected final void setState(State state)
+    protected synchronized final void setState(State state)
     {
         if (state == null)
             throw new IllegalArgumentException("state is null");
@@ -34,6 +33,7 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
         {
             mState = state;
             onStateChanged(old, mState);
+
             if (mOnStateChangeCallback != null)
                 mOnStateChangeCallback.onStateChanged(old, mState);
         }
@@ -53,29 +53,35 @@ public abstract class BaseRequestDataTask<T> implements RequestDataTask<T>
         @Override
         public void onSuccess(T data)
         {
-            setState(State.Success);
-            if (mRealExecuteCallback != null)
-                mRealExecuteCallback.onSuccess(data);
+            synchronized (BaseRequestDataTask.this)
+            {
+                setState(State.Success);
+                if (mRealExecuteCallback != null)
+                    mRealExecuteCallback.onSuccess(data);
+            }
         }
 
         @Override
         public void onError(int code, String desc)
         {
-            setState(State.Error);
-            if (mRealExecuteCallback != null)
-                mRealExecuteCallback.onError(code, desc);
+            synchronized (BaseRequestDataTask.this)
+            {
+                setState(State.Error);
+                if (mRealExecuteCallback != null)
+                    mRealExecuteCallback.onError(code, desc);
+            }
         }
     };
 
     @Override
-    public void execute(ExecuteCallback<T> callback)
+    public synchronized void execute(ExecuteCallback<T> callback)
     {
         mRealExecuteCallback = callback;
         executeImpl();
     }
 
     @Override
-    public final void cancel()
+    public synchronized final void cancel()
     {
         mRealExecuteCallback = null;
         cancelImpl();
